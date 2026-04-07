@@ -93,67 +93,67 @@ export default function Dashboard({ onNavigate, onRefreshDue }: Props) {
   const greeting = getGreeting()
 
   return (
-    <div className="p-8 max-w-4xl mx-auto fade-in">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto fade-in">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-white mb-1">{greeting.japanese}</h2>
-        <p className="text-slate-400">{getMotivationalMessage(profile?.streak || 0)}</p>
+      <div className="mb-5 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">{greeting.japanese}</h2>
+        <p className="text-slate-400 text-sm md:text-base">{getMotivationalMessage(profile?.streak || 0)}</p>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-3 gap-2 md:gap-4 mb-5 md:mb-8">
         {/* Streak */}
-        <div className="card-surface p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-2xl">🔥</span>
-            <span className="text-slate-400 text-sm font-medium uppercase tracking-wide">Streak</span>
+        <div className="card-surface p-3 md:p-5">
+          <div className="flex items-center gap-1.5 md:gap-3 mb-2 md:mb-3">
+            <span className="text-lg md:text-2xl">🔥</span>
+            <span className="text-slate-400 text-[10px] md:text-sm font-medium uppercase tracking-wide">Streak</span>
           </div>
-          <div className="text-4xl font-bold text-[#E8A838]">{profile?.streak || 0}</div>
-          <div className="text-slate-500 text-sm mt-1">days</div>
+          <div className="text-2xl md:text-4xl font-bold text-[#E8A838]">{profile?.streak || 0}</div>
+          <div className="text-slate-500 text-xs md:text-sm mt-1">days</div>
         </div>
 
         {/* XP / Level */}
-        <div className="card-surface p-5">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-400 text-sm font-medium uppercase tracking-wide">Level</span>
-            <span className="text-[#E8A838] font-bold text-lg">{profile?.level || 1}</span>
+        <div className="card-surface p-3 md:p-5">
+          <div className="flex items-center justify-between mb-1 md:mb-2">
+            <span className="text-slate-400 text-[10px] md:text-sm font-medium uppercase tracking-wide">Level</span>
+            <span className="text-[#E8A838] font-bold text-base md:text-lg">{profile?.level || 1}</span>
           </div>
-          <div className="text-slate-300 text-xs mb-2">{getLevelTitle(profile?.level || 1)}</div>
-          <div className="w-full bg-slate-800 rounded-full h-2 mb-1">
+          <div className="text-slate-300 text-[10px] md:text-xs mb-1 md:mb-2 truncate">{getLevelTitle(profile?.level || 1)}</div>
+          <div className="w-full bg-slate-800 rounded-full h-1.5 md:h-2 mb-1">
             <div
-              className="bg-[#E8A838] h-2 rounded-full transition-all duration-500"
+              className="bg-[#E8A838] h-1.5 md:h-2 rounded-full transition-all duration-500"
               style={{ width: `${xpPercent}%` }}
             />
           </div>
-          <div className="text-slate-500 text-xs">{xpProgress} / {xpNeeded} XP</div>
+          <div className="text-slate-500 text-[10px] md:text-xs">{xpProgress} / {xpNeeded} XP</div>
         </div>
 
         {/* Today */}
-        <div className="card-surface p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-2xl">📈</span>
-            <span className="text-slate-400 text-sm font-medium uppercase tracking-wide">Today</span>
+        <div className="card-surface p-3 md:p-5">
+          <div className="flex items-center gap-1.5 md:gap-3 mb-2 md:mb-3">
+            <span className="text-lg md:text-2xl">📈</span>
+            <span className="text-slate-400 text-[10px] md:text-sm font-medium uppercase tracking-wide">Today</span>
           </div>
-          <div className="text-4xl font-bold text-[#6A994E]">{stats.reviewed}</div>
-          <div className="text-slate-500 text-sm mt-1">
-            {stats.reviewed > 0 ? `${stats.accuracy}% accuracy` : 'cards reviewed'}
+          <div className="text-2xl md:text-4xl font-bold text-[#6A994E]">{stats.reviewed}</div>
+          <div className="text-slate-500 text-xs md:text-sm mt-1">
+            {stats.reviewed > 0 ? `${stats.accuracy}% acc.` : 'reviewed'}
           </div>
         </div>
       </div>
 
       {/* Action cards */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-5 md:mb-8">
         {/* Review */}
-        <div className="card-surface p-6 border-[#4A6FA5] border">
-          <div className="flex items-start justify-between mb-4">
+        <div className="card-surface p-4 md:p-6 border-[#4A6FA5] border">
+          <div className="flex items-start justify-between mb-3 md:mb-4">
             <div>
               <h3 className="text-lg font-semibold text-white mb-1">Review Cards</h3>
               <p className="text-slate-400 text-sm">SRS flashcard queue</p>
             </div>
             <span className="text-3xl">🃏</span>
           </div>
-          <div className="mb-5">
-            <span className="text-4xl font-bold text-[#4A6FA5]">{Math.min(dueCount, 20)}</span>
+          <div className="mb-4 md:mb-5">
+            <span className="text-3xl md:text-4xl font-bold text-[#4A6FA5]">{Math.min(dueCount, 20)}</span>
             <span className="text-slate-400 ml-2 text-sm">cards today</span>
             {dueCount > 20 && (
               <div className="text-slate-600 text-xs mt-1">{dueCount} total in queue</div>
@@ -173,15 +173,15 @@ export default function Dashboard({ onNavigate, onRefreshDue }: Props) {
         </div>
 
         {/* Conversation */}
-        <div className="card-surface p-6 border-[#6A994E] border">
-          <div className="flex items-start justify-between mb-4">
+        <div className="card-surface p-4 md:p-6 border-[#6A994E] border">
+          <div className="flex items-start justify-between mb-3 md:mb-4">
             <div>
               <h3 className="text-lg font-semibold text-white mb-1">AI Conversation</h3>
               <p className="text-slate-400 text-sm">Practice with Keita</p>
             </div>
             <span className="text-3xl">💬</span>
           </div>
-          <div className="mb-5">
+          <div className="mb-4 md:mb-5">
             <p className="text-slate-300 text-sm leading-relaxed">
               Chat with your AI tutor in Japanese. Build speaking confidence at N5 level.
             </p>
@@ -196,8 +196,8 @@ export default function Dashboard({ onNavigate, onRefreshDue }: Props) {
       </div>
 
       {/* Lessons link */}
-      <div className="card-surface p-5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="card-surface p-4 md:p-5 flex items-center justify-between">
+        <div className="flex items-center gap-3 md:gap-4">
           <span className="text-2xl">📖</span>
           <div>
             <h3 className="text-white font-semibold">Structured Lessons</h3>
@@ -206,7 +206,7 @@ export default function Dashboard({ onNavigate, onRefreshDue }: Props) {
         </div>
         <button
           onClick={() => onNavigate('lessons')}
-          className="btn-secondary px-5"
+          className="btn-secondary px-4 md:px-5 shrink-0"
         >
           Continue →
         </button>

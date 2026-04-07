@@ -93,3 +93,8 @@ rt {
 .pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
 }
+
+/* iPhone safe area for bottom nav */
+.safe-area-bottom {
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+}

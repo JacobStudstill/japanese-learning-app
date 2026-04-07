@@ -56,8 +56,8 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-[#0f0f1a] text-slate-200 overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-56 bg-[#12121f] border-r border-slate-800 flex flex-col py-6 px-3 shrink-0">
+      {/* Sidebar — desktop only */}
+      <aside className="hidden md:flex w-56 bg-[#12121f] border-r border-slate-800 flex-col py-6 px-3 shrink-0">
         <div className="px-3 mb-8">
           <h1 className="text-xl font-bold text-white">
             <span className="text-[#E8A838]">日</span>
@@ -97,13 +97,34 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
         {page === 'dashboard' && <Dashboard onNavigate={setPage} onRefreshDue={loadDueCount} />}
         {page === 'lessons' && <Lessons />}
         {page === 'review' && <Review onComplete={loadDueCount} />}
         {page === 'conversation' && <Conversation />}
         {page === 'progress' && <Progress />}
       </main>
+
+      {/* Bottom nav — mobile only */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#12121f] border-t border-slate-800 flex items-center justify-around px-1 py-1 z-50 safe-area-bottom">
+        {NAV_ITEMS.map(item => (
+          <button
+            key={item.id}
+            onClick={() => { setPage(item.id); if (item.id === 'dashboard') loadDueCount() }}
+            className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg relative transition-colors ${
+              page === item.id ? 'text-white' : 'text-slate-500'
+            }`}
+          >
+            <span className="text-xl leading-none">{item.icon}</span>
+            <span className="text-[10px] font-medium">{item.label}</span>
+            {item.id === 'review' && dueCount > 0 && (
+              <span className="absolute top-1 right-1 bg-[#BC4749] text-white text-[9px] font-bold min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full">
+                {dueCount > 99 ? '99+' : dueCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </nav>
     </div>
   )
 }
