@@ -191,9 +191,9 @@ export default function Review({ onComplete }: Props) {
   const isMeaning = currentCard?.card_type === 'meaning'
 
   return (
-    <div className="flex flex-col h-full p-6">
+    <div className="flex flex-col h-full">
       {/* Progress bar */}
-      <div className="mb-6">
+      <div className="px-4 md:px-6 pt-4 md:pt-6 pb-3 shrink-0">
         <div className="flex justify-between text-slate-400 text-sm mb-2">
           <span>{currentIndex + 1} / {cards.length}</span>
           <span className="capitalize">{currentCard?.card_type} card</span>
@@ -206,8 +206,9 @@ export default function Review({ onComplete }: Props) {
         </div>
       </div>
 
-      {/* Card */}
-      <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
+      {/* Card — scrollable so answer + buttons are always reachable */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-6">
+      <div className="flex flex-col items-center max-w-2xl mx-auto w-full pt-2">
         <div className="card-surface w-full p-8 mb-6 text-center flip-in">
           {/* Card front */}
           <div className="mb-4">
@@ -329,6 +330,7 @@ export default function Review({ onComplete }: Props) {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

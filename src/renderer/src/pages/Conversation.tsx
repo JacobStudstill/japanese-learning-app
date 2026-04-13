@@ -227,42 +227,71 @@ export default function Conversation() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#6A994E] flex items-center justify-center text-white font-bold">
-            K
-          </div>
-          <div>
-            <h2 className="text-white font-semibold">Keita</h2>
-            <p className="text-slate-500 text-xs">AI Japanese Tutor · N5 Level</p>
-          </div>
+      {/* Coming Soon overlay */}
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center fade-in">
+        <div className="text-6xl mb-4">💬</div>
+        <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+          AI Conversation
+        </h2>
+        <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#4A6FA5]/20 text-[#4A6FA5] border border-[#4A6FA5]/30 mb-4">
+          Coming Soon
         </div>
+        <p className="max-w-xs leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
+          Chat with <strong>Keita</strong>, your AI Japanese tutor. Practice real conversations, work through scenarios, and build speaking confidence — all at N5 level.
+        </p>
+        <div className="space-y-2 text-sm w-full max-w-xs text-left">
+          {[
+            { icon: '🗣️', label: 'Free Talk', desc: 'Open-ended conversation practice' },
+            { icon: '🎭', label: 'Scenarios', desc: 'Restaurant, shopping, directions...' },
+            { icon: '🔁', label: 'Repeat Mode', desc: 'Shadowing for pronunciation' },
+            { icon: '🎤', label: 'Voice Input', desc: 'Speak Japanese out loud' }
+          ].map(f => (
+            <div key={f.label} className="flex items-start gap-3 rounded-lg p-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+              <span className="text-xl shrink-0">{f.icon}</span>
+              <div>
+                <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{f.label}</div>
+                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{f.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-        <div className="flex items-center gap-3">
-          {/* Mode selector */}
-          <div className="flex bg-[#1a1a2e] rounded-lg p-1 gap-1">
-            {(['free', 'scenario', 'repeat'] as Mode[]).map(m => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-150 capitalize ${
-                  mode === m
-                    ? 'bg-[#4A6FA5] text-white'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {m === 'free' ? 'Free Talk' : m === 'scenario' ? 'Scenario' : 'Repeat'}
-              </button>
-            ))}
+      {/* Hidden header — keeps the component functional for future use */}
+      <div className="hidden">
+      {/* Header */}
+      <div className="border-b border-slate-800 px-4 py-3 shrink-0">
+        {/* Row 1: Keita info */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#6A994E] flex items-center justify-center text-white font-bold shrink-0">
+              K
+            </div>
+            <div>
+              <h2 className="text-white font-semibold">Keita</h2>
+              <p className="text-slate-500 text-xs">AI Japanese Tutor · N5 Level</p>
+            </div>
           </div>
-
           <button
             onClick={clearConversation}
-            className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+            className="text-slate-500 hover:text-slate-300 text-sm transition-colors px-2 py-1"
           >
             Clear
           </button>
+        </div>
+        {/* Row 2: Mode tabs */}
+        <div className="flex bg-[#1a1a2e] rounded-lg p-1 gap-1">
+          {(['free', 'scenario', 'repeat'] as Mode[]).map(m => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-all duration-150 ${
+                mode === m ? 'bg-[#4A6FA5] text-white' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {m === 'free' ? 'Free Talk' : m === 'scenario' ? 'Scenario' : 'Repeat'}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -442,6 +471,7 @@ export default function Conversation() {
             : 'Type your message and press Enter to send'}
         </p>
       </div>
+      </div>{/* end hidden */}
     </div>
   )
 }
