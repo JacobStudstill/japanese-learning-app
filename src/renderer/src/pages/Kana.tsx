@@ -171,11 +171,11 @@ export default function Kana() {
     feedbackRef.current = ok ? 'correct' : 'wrong'
     if (!ok) {
       setCorrectAnswer(cur.romaji)
-      // Stay focused so user can hit Enter to advance
-      inputRef.current?.focus()
     }
+    // Focus immediately while still inside the user gesture — iOS won't dismiss keyboard
+    inputRef.current?.focus()
     if (ok) {
-      advanceTimer.current = setTimeout(advanceToNext, 650)
+      advanceTimer.current = setTimeout(advanceToNext, 800)
     }
   }
 
@@ -362,10 +362,10 @@ export default function Kana() {
                   Select at least one row to start quizzing.
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-5 max-w-sm mx-auto w-full">
+                <div className="flex flex-col items-center gap-2 max-w-sm mx-auto w-full">
 
                   {/* Score */}
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-4 text-sm mb-1">
                     <span style={{ color: 'var(--text-muted)' }}>
                       {score.correct} / {score.total} correct
                     </span>
@@ -378,80 +378,82 @@ export default function Kana() {
 
                   {/* Kana card */}
                   <div
-                    className="w-full rounded-2xl flex items-center justify-center"
+                    className="w-full rounded-2xl flex flex-col items-center justify-center"
                     style={{
                       background: 'var(--bg-card)',
                       border: `2px solid ${feedback === 'correct' ? '#6A994E' : feedback === 'wrong' ? '#BC4749' : 'var(--border-subtle)'}`,
-                      height: '180px',
+                      height: '130px',
                       transition: 'border-color 0.15s'
                     }}
                   >
                     <span
                       className="japanese-text font-bold select-none"
-                      style={{ fontSize: '7rem', lineHeight: 1, color: 'var(--text-primary)' }}
+                      style={{ fontSize: '5rem', lineHeight: 1, color: 'var(--text-primary)' }}
                     >
                       {current?.kana}
                     </span>
-                  </div>
-
-                  {/* Feedback */}
-                  <div className="h-7 flex items-center justify-center">
-                    {feedback === 'correct' && (
-                      <span className="font-semibold text-lg fade-in" style={{ color: '#6A994E' }}>✓ Correct!</span>
-                    )}
-                    {feedback === 'wrong' && (
-                      <span className="font-semibold text-base fade-in" style={{ color: '#BC4749' }}>
-                        ✗ Answer: <strong>{correctAnswer}</strong>
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Input — always mounted, never remounted */}
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={input}
-                    onChange={handleInputChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type romaji..."
-                    autoCapitalize="none"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    inputMode="text"
-                    className="w-full text-center text-xl rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-[#4A6FA5]"
-                    style={{
-                      background: 'var(--bg-input)',
-                      borderColor: feedback === 'correct' ? '#6A994E' : feedback === 'wrong' ? '#BC4749' : 'var(--border-subtle)',
-                      color: 'var(--text-primary)'
-                    }}
-                  />
-
-                  {/* Action button */}
-                  {feedback === null && (
-                    <button
-                      onClick={submitAnswer}
-                      disabled={!input.trim()}
-                      className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95 disabled:opacity-40"
-                      style={{ background: '#4A6FA5' }}
-                    >
-                      Check <span className="text-xs opacity-60 ml-1">[Enter]</span>
-                    </button>
-                  )}
-                  {feedback === 'wrong' && (
-                    <button
-                      onClick={handleNextClick}
-                      className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95"
-                      style={{ background: '#4A6FA5' }}
-                    >
-                      Next → <span className="text-xs opacity-60 ml-1">[Enter]</span>
-                    </button>
-                  )}
-                  {feedback === 'correct' && (
-                    <div className="w-full py-3 rounded-xl text-center font-semibold" style={{ color: '#6A994E', background: '#6A994E15' }}>
-                      ✓ Moving on...
+                    {/* Feedback inside the card so no extra space needed */}
+                    <div className="mt-1 h-5 flex items-center justify-center">
+                      {feedback === 'correct' && (
+                        <span className="font-semibold text-sm fade-in" style={{ color: '#6A994E' }}>✓ Correct!</span>
+                      )}
+                      {feedback === 'wrong' && (
+                        <span className="font-semibold text-sm fade-in" style={{ color: '#BC4749' }}>
+                          ✗ Answer: <strong>{correctAnswer}</strong>
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
+
+                  {/* Input + button wrapped in form so Apple keyboard checkmark fires onSubmit */}
+                  <form
+                    className="w-full flex flex-col gap-2"
+                    onSubmit={e => {
+                      e.preventDefault()
+                      if (feedbackRef.current === 'wrong' || feedbackRef.current === 'correct') {
+                        if (advanceTimer.current) clearTimeout(advanceTimer.current)
+                        advanceToNext()
+                      } else {
+                        submitAnswer()
+                      }
+                    }}
+                  >
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={input}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Type romaji..."
+                      autoCapitalize="none"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      enterKeyHint="go"
+                      className="w-full text-center text-xl rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-[#4A6FA5]"
+                      style={{
+                        background: 'var(--bg-input)',
+                        borderColor: feedback === 'correct' ? '#6A994E' : feedback === 'wrong' ? '#BC4749' : 'var(--border-subtle)',
+                        color: 'var(--text-primary)'
+                      }}
+                    />
+
+                    {/* Single always-mounted button — never unmounts so iOS keeps keyboard up */}
+                    <button
+                      type="submit"
+                      disabled={feedback === null && !input.trim()}
+                      className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95 disabled:opacity-40"
+                      style={{
+                        background: feedback === 'correct' ? '#6A994E' : '#4A6FA5'
+                      }}
+                    >
+                      {feedback === 'correct'
+                        ? '✓ Moving on...'
+                        : feedback === 'wrong'
+                          ? 'Next →'
+                          : 'Check'}
+                    </button>
+                  </form>
                 </div>
               )}
             </div>
