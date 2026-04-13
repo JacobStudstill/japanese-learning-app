@@ -10,6 +10,7 @@ interface Profile {
   level: number
   last_study_date: string | null
   daily_new_cards: number
+  display_name: string | null
 }
 
 interface TodayStats {
@@ -96,7 +97,12 @@ export default function Dashboard({ onNavigate, onRefreshDue }: Props) {
     <div className="p-4 md:p-8 max-w-4xl mx-auto fade-in">
       {/* Header */}
       <div className="mb-5 md:mb-8">
-        <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">{greeting.japanese}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">
+          {greeting.japanese}
+          {profile?.display_name && !profile.display_name.includes('@') && (
+            <span className="text-slate-300 font-normal text-xl md:text-2xl">, {profile.display_name}</span>
+          )}
+        </h2>
         <p className="text-slate-400 text-sm md:text-base">{getMotivationalMessage(profile?.streak || 0)}</p>
       </div>
 

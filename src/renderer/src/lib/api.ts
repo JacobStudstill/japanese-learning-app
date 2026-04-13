@@ -30,13 +30,13 @@ export async function updateProfile(data: Record<string, unknown>) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { data: updated } = await supabase
+  const { data: updated, error } = await supabase
     .from('user_profile')
     .update(data)
     .eq('user_id', user.id)
     .select()
     .single()
-  return updated
+  return { data: updated, error }
 }
 
 // ── Vocab ─────────────────────────────────────────────────────────────────────

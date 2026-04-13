@@ -27,6 +27,7 @@ export default function ProfileDropdown({
   const [selectedAvatar, setSelectedAvatar] = useState(avatar || '🐶')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -39,12 +40,19 @@ export default function ProfileDropdown({
 
   async function handleSaveProfile() {
     setSaving(true)
+    setSaveError(null)
     try {
-      await updateProfile({ display_name: nameInput.trim() || null, avatar: selectedAvatar })
-      onUpdate(nameInput.trim(), selectedAvatar)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    } catch { /* ignore */ }
+      const { error } = await updateProfile({ display_name: nameInput.trim() || null, avatar: selectedAvatar })
+      if (error) {
+        setSaveError(`Save failed: ${error.message}`)
+      } else {
+        onUpdate(nameInput.trim(), selectedAvatar)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : 'Save failed — check Supabase migration')
+    }
     setSaving(false)
   }
 
@@ -148,6 +156,12 @@ export default function ProfileDropdown({
               }}
             />
           </div>
+
+          {saveError && (
+            <p className="text-xs mb-2 p-2 rounded-lg" style={{ color: '#BC4749', background: '#BC474920' }}>
+              {saveError}
+            </p>
+          )}
 
           {/* Save profile */}
           <button
