@@ -4,6 +4,7 @@ import Review from './pages/Review'
 import Lessons from './pages/Lessons'
 import Conversation from './pages/Conversation'
 import Progress from './pages/Progress'
+import Kana from './pages/Kana'
 import Login from './components/Login'
 import ProfileDropdown from './components/ProfileDropdown'
 import { ThemeProvider } from './context/ThemeContext'
@@ -12,14 +13,15 @@ import { getDueCount, getProfile } from './lib/api'
 import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 
-type Page = 'dashboard' | 'lessons' | 'review' | 'conversation' | 'progress'
+type Page = 'dashboard' | 'lessons' | 'review' | 'kana' | 'conversation' | 'progress'
 
 const NAV_ITEMS: Array<{ id: Page; label: string; icon: string }> = [
-  { id: 'dashboard',    label: 'Dashboard',    icon: '⌂' },
-  { id: 'lessons',      label: 'Lessons',      icon: '📖' },
-  { id: 'review',       label: 'Review',       icon: '🃏' },
-  { id: 'conversation', label: 'Conversation', icon: '💬' },
-  { id: 'progress',     label: 'Progress',     icon: '📊' }
+  { id: 'dashboard',    label: 'Home',    icon: '⌂' },
+  { id: 'lessons',      label: 'Lessons', icon: '📖' },
+  { id: 'review',       label: 'Review',  icon: '🃏' },
+  { id: 'kana',         label: 'Kana',    icon: 'あ' },
+  { id: 'conversation', label: 'Chat',    icon: '💬' },
+  { id: 'progress',     label: 'Progress',icon: '📊' }
 ]
 
 export default function App() {
@@ -151,6 +153,7 @@ export default function App() {
             {page === 'dashboard'    && <Dashboard onNavigate={setPage} onRefreshDue={loadDueCount} />}
             {page === 'lessons'      && <Lessons />}
             {page === 'review'       && <Review onComplete={loadDueCount} />}
+            {page === 'kana'         && <Kana />}
             {page === 'conversation' && <Conversation />}
             {page === 'progress'     && <Progress />}
           </main>
