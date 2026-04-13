@@ -100,7 +100,7 @@ export default function Dashboard({ onNavigate, onRefreshDue }: Props) {
         <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">
           {greeting.japanese}
           {profile?.display_name && !profile.display_name.includes('@') && (
-            <span className="text-slate-300 font-normal text-xl md:text-2xl">, {profile.display_name}</span>
+            <span className="text-slate-300 font-bold text-2xl md:text-3xl">, {profile.display_name}</span>
           )}
         </h2>
         <p className="text-slate-400 text-sm md:text-base">{getMotivationalMessage(profile?.streak || 0)}</p>
