@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 type Script = 'hiragana' | 'katakana' | 'both'
 type AppMode = 'study' | 'quiz'
@@ -67,8 +67,6 @@ const ROWS: KanaRow[] = [
 const COL_LABELS = ['a', 'i', 'u', 'e', 'o']
 const ALL_ROW_IDS = new Set(ROWS.map(r => r.id))
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
 type PoolItem = { kana: string; romaji: string; alt?: string[] }
 
 function buildPool(script: Script, selectedRowIds: Set<string>): PoolItem[] {
@@ -90,83 +88,119 @@ function isCorrect(input: string, item: PoolItem): boolean {
   return v === item.romaji || (item.alt?.includes(v) ?? false)
 }
 
-// ── Component ──────────────────────────────────────────────────────────────
+function pickRandom(pool: PoolItem[]): PoolItem {
+  return pool[Math.floor(Math.random() * pool.length)]
+}
 
 export default function Kana() {
   const [script, setScript] = useState<Script>('hiragana')
   const [mode, setMode] = useState<AppMode>('study')
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set(ALL_ROW_IDS))
 
   // Quiz state
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set(ALL_ROW_IDS))
   const [pool, setPool] = useState<PoolItem[]>([])
   const [current, setCurrent] = useState<PoolItem | null>(null)
   const [input, setInput] = useState('')
   const [feedback, setFeedback] = useState<Feedback>(null)
   const [correctAnswer, setCorrectAnswer] = useState('')
   const [score, setScore] = useState({ correct: 0, total: 0 })
+
   const inputRef = useRef<HTMLInputElement>(null)
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Keep latest feedback/pool/current in refs so event handlers never go stale
+  const feedbackRef = useRef<Feedback>(null)
+  const poolRef = useRef<PoolItem[]>([])
+  const currentRef = useRef<PoolItem | null>(null)
+  const inputValRef = useRef('')
 
-  // Rebuild pool when script/rows change
+  // Sync refs with state
+  useEffect(() => { feedbackRef.current = feedback }, [feedback])
+  useEffect(() => { poolRef.current = pool }, [pool])
+  useEffect(() => { currentRef.current = current }, [current])
+  useEffect(() => { inputValRef.current = input }, [input])
+
+  // Rebuild pool when script/rows/mode change
   useEffect(() => {
     if (mode !== 'quiz') return
+    if (advanceTimer.current) clearTimeout(advanceTimer.current)
     const p = buildPool(script, selectedRows)
+    poolRef.current = p
     setPool(p)
-    if (p.length > 0) {
-      setCurrent(p[Math.floor(Math.random() * p.length)])
-    } else {
-      setCurrent(null)
-    }
+    const first = p.length > 0 ? pickRandom(p) : null
+    setCurrent(first)
+    currentRef.current = first
     setInput('')
+    inputValRef.current = ''
     setFeedback(null)
+    feedbackRef.current = null
+    setCorrectAnswer('')
     setScore({ correct: 0, total: 0 })
   }, [script, selectedRows, mode])
 
-  // Focus input when quiz starts or advances
+  // Focus input whenever quiz is active and waiting for answer
   useEffect(() => {
     if (mode === 'quiz' && feedback === null) {
-      inputRef.current?.focus()
+      // Small delay so DOM has settled
+      const t = setTimeout(() => inputRef.current?.focus(), 50)
+      return () => clearTimeout(t)
     }
   }, [mode, feedback, current])
 
-  function nextCard(currentPool: PoolItem[]) {
-    if (currentPool.length === 0) return
-    setCurrent(currentPool[Math.floor(Math.random() * currentPool.length)])
+  function advanceToNext() {
+    const p = poolRef.current
+    if (p.length === 0) return
+    const next = pickRandom(p)
+    setCurrent(next)
+    currentRef.current = next
     setInput('')
+    inputValRef.current = ''
     setFeedback(null)
+    feedbackRef.current = null
     setCorrectAnswer('')
   }
 
-  function handleSubmit() {
-    if (!current || feedback !== null) return
-    const ok = isCorrect(input, current)
+  function submitAnswer() {
+    const fb = feedbackRef.current
+    const cur = currentRef.current
+    const val = inputValRef.current
+    if (!cur || fb !== null) return
+    const ok = isCorrect(val, cur)
     setScore(s => ({ correct: s.correct + (ok ? 1 : 0), total: s.total + 1 }))
     setFeedback(ok ? 'correct' : 'wrong')
-    if (!ok) setCorrectAnswer(current.romaji)
-
+    feedbackRef.current = ok ? 'correct' : 'wrong'
+    if (!ok) setCorrectAnswer(cur.romaji)
     if (ok) {
-      advanceTimer.current = setTimeout(() => nextCard(pool), 650)
+      advanceTimer.current = setTimeout(advanceToNext, 650)
     }
   }
 
-  function handleNext() {
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (feedbackRef.current !== null) return
+    setInput(e.target.value)
+    inputValRef.current = e.target.value
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    if (feedbackRef.current === 'wrong') {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current)
+      advanceToNext()
+    } else {
+      submitAnswer()
+    }
+  }
+
+  function handleNextClick() {
     if (advanceTimer.current) clearTimeout(advanceTimer.current)
-    nextCard(pool)
+    advanceToNext()
   }
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      if (feedback === 'wrong') handleNext()
-      else handleSubmit()
-    }
-  }, [feedback, input, current, pool])
 
   function toggleRow(id: string) {
     setSelectedRows(prev => {
       const next = new Set(prev)
       if (next.has(id)) {
-        if (next.size === 1) return prev // keep at least one
+        if (next.size === 1) return prev
         next.delete(id)
       } else {
         next.add(id)
@@ -176,190 +210,8 @@ export default function Kana() {
   }
 
   const accuracy = score.total > 0 ? Math.round((score.correct / score.total) * 100) : null
-
-  // ── Study Mode ──────────────────────────────────────────────────────────
-
-  function StudyView() {
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-center" style={{ minWidth: '320px' }}>
-          <thead>
-            <tr>
-              <th className="py-2 px-1 text-xs font-semibold w-10" style={{ color: 'var(--text-muted)' }} />
-              {COL_LABELS.map(col => (
-                <th key={col} className="py-2 px-1 text-xs font-bold uppercase" style={{ color: 'var(--text-muted)' }}>
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ROWS.map(row => {
-              const showH = script === 'hiragana' || script === 'both'
-              const showK = script === 'katakana' || script === 'both'
-              return (
-                <tr key={row.id} className="border-t" style={{ borderColor: 'var(--border-color)' }}>
-                  <td className="py-1 px-1 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
-                    {row.label}
-                  </td>
-                  {row.hiragana.map((hChar, ci) => {
-                    const kChar = row.katakana[ci]
-                    const isEmpty = !hChar && !kChar
-                    return (
-                      <td key={ci} className="py-1 px-0.5">
-                        {isEmpty ? (
-                          <span style={{ color: 'var(--border-subtle)' }}>—</span>
-                        ) : (
-                          <div
-                            className="rounded-lg py-1.5 px-1 inline-flex flex-col items-center gap-0 min-w-[44px]"
-                            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
-                          >
-                            {showH && hChar && (
-                              <span className="text-lg md:text-xl leading-tight japanese-text font-medium" style={{ color: 'var(--text-primary)' }}>
-                                {hChar.kana}
-                              </span>
-                            )}
-                            {showK && kChar && (
-                              <span className="text-lg md:text-xl leading-tight japanese-text font-medium" style={{ color: script === 'both' ? '#4A6FA5' : 'var(--text-primary)' }}>
-                                {kChar.kana}
-                              </span>
-                            )}
-                            <span className="text-[10px] font-semibold mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                              {(hChar || kChar)?.romaji}
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-        {script === 'both' && (
-          <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-muted)' }}>
-            Black = Hiragana · <span style={{ color: '#4A6FA5' }}>Blue = Katakana</span>
-          </p>
-        )}
-      </div>
-    )
-  }
-
-  // ── Quiz Mode ───────────────────────────────────────────────────────────
-
-  function QuizView() {
-    if (pool.length === 0) {
-      return (
-        <div className="flex items-center justify-center py-20 text-center" style={{ color: 'var(--text-muted)' }}>
-          Select at least one row to start quizzing.
-        </div>
-      )
-    }
-
-    return (
-      <div className="flex flex-col items-center gap-5 max-w-sm mx-auto w-full">
-
-        {/* Score */}
-        <div className="flex items-center gap-4 text-sm">
-          <span style={{ color: 'var(--text-muted)' }}>
-            {score.correct} / {score.total} correct
-          </span>
-          {accuracy !== null && (
-            <span
-              className="font-bold"
-              style={{ color: accuracy >= 80 ? '#6A994E' : accuracy >= 50 ? '#E8A838' : '#BC4749' }}
-            >
-              {accuracy}%
-            </span>
-          )}
-        </div>
-
-        {/* Kana card */}
-        <div
-          className="w-full rounded-2xl flex items-center justify-center"
-          style={{
-            background: 'var(--bg-card)',
-            border: `2px solid ${
-              feedback === 'correct' ? '#6A994E' :
-              feedback === 'wrong'   ? '#BC4749' :
-              'var(--border-subtle)'
-            }`,
-            height: '180px',
-            transition: 'border-color 0.15s'
-          }}
-        >
-          <span
-            className="japanese-text font-bold select-none"
-            style={{ fontSize: '7rem', lineHeight: 1, color: 'var(--text-primary)' }}
-          >
-            {current?.kana}
-          </span>
-        </div>
-
-        {/* Feedback message */}
-        <div className="h-7 flex items-center justify-center">
-          {feedback === 'correct' && (
-            <span className="font-semibold text-lg fade-in" style={{ color: '#6A994E' }}>
-              ✓ Correct!
-            </span>
-          )}
-          {feedback === 'wrong' && (
-            <span className="font-semibold text-base fade-in" style={{ color: '#BC4749' }}>
-              ✗ Answer: <strong>{correctAnswer}</strong>
-            </span>
-          )}
-        </div>
-
-        {/* Input */}
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={e => { if (feedback === null) setInput(e.target.value) }}
-          onKeyDown={handleKeyDown}
-          placeholder="Type romaji..."
-          disabled={feedback === 'correct'}
-          autoCapitalize="none"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          className="w-full text-center text-xl rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-[#4A6FA5]"
-          style={{
-            background: 'var(--bg-input)',
-            borderColor: feedback === 'correct' ? '#6A994E' : feedback === 'wrong' ? '#BC4749' : 'var(--border-subtle)',
-            color: 'var(--text-primary)'
-          }}
-        />
-
-        {/* Action button */}
-        {feedback === null ? (
-          <button
-            onClick={handleSubmit}
-            disabled={!input.trim()}
-            className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95 disabled:opacity-40"
-            style={{ background: '#4A6FA5' }}
-          >
-            Check  <span className="text-xs opacity-60 ml-1">[Enter]</span>
-          </button>
-        ) : feedback === 'wrong' ? (
-          <button
-            onClick={handleNext}
-            className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95"
-            style={{ background: '#4A6FA5' }}
-          >
-            Next →  <span className="text-xs opacity-60 ml-1">[Enter]</span>
-          </button>
-        ) : (
-          <div className="w-full py-3 rounded-xl text-center font-semibold" style={{ color: '#6A994E', background: '#6A994E15' }}>
-            ✓ Moving on...
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // ── Render ──────────────────────────────────────────────────────────────
+  const showH = script === 'hiragana' || script === 'both'
+  const showK = script === 'katakana' || script === 'both'
 
   return (
     <div className="flex flex-col h-full">
@@ -369,18 +221,17 @@ export default function Kana() {
           {/* Page title */}
           <div className="mb-5">
             <h2 className="text-2xl md:text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Kana</h2>
-            <p style={{ color: 'var(--text-secondary)' }} className="text-sm">Study and test Hiragana & Katakana</p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Study and test Hiragana & Katakana</p>
           </div>
 
           {/* Script + Mode toggles */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            {/* Script selector */}
             <div className="flex rounded-lg p-1 gap-1 flex-1" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
               {(['hiragana', 'katakana', 'both'] as Script[]).map(s => (
                 <button
                   key={s}
                   onClick={() => setScript(s)}
-                  className="flex-1 py-1.5 rounded-md text-sm font-medium transition-all capitalize"
+                  className="flex-1 py-1.5 rounded-md text-sm font-medium transition-all"
                   style={{
                     background: script === s ? '#4A6FA5' : 'transparent',
                     color: script === s ? '#ffffff' : 'var(--text-secondary)'
@@ -390,14 +241,12 @@ export default function Kana() {
                 </button>
               ))}
             </div>
-
-            {/* Mode selector */}
             <div className="flex rounded-lg p-1 gap-1" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
               {(['study', 'quiz'] as AppMode[]).map(m => (
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className="px-5 py-1.5 rounded-md text-sm font-medium transition-all capitalize"
+                  className="px-5 py-1.5 rounded-md text-sm font-medium transition-all"
                   style={{
                     background: mode === m ? '#E8A838' : 'transparent',
                     color: mode === m ? '#0f0f1a' : 'var(--text-secondary)'
@@ -409,49 +258,200 @@ export default function Kana() {
             </div>
           </div>
 
-          {/* Quiz row selector */}
-          {mode === 'quiz' && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                  Rows to quiz
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSelectedRows(new Set(ALL_ROW_IDS))}
-                    className="text-xs px-2 py-0.5 rounded" style={{ color: '#4A6FA5' }}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setSelectedRows(new Set(['vowels']))}
-                    className="text-xs px-2 py-0.5 rounded" style={{ color: 'var(--text-muted)' }}
-                  >
-                    Vowels only
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {ROWS.map(row => (
-                  <button
-                    key={row.id}
-                    onClick={() => toggleRow(row.id)}
-                    className="px-3 py-1 rounded-full text-xs font-semibold transition-all active:scale-95"
-                    style={{
-                      background: selectedRows.has(row.id) ? '#4A6FA5' : 'var(--bg-card)',
-                      color: selectedRows.has(row.id) ? '#ffffff' : 'var(--text-secondary)',
-                      border: `1px solid ${selectedRows.has(row.id) ? '#4A6FA5' : 'var(--border-subtle)'}`
-                    }}
-                  >
-                    {row.label}
-                  </button>
-                ))}
-              </div>
+          {/* ── STUDY MODE ─────────────────────────────────────────────── */}
+          {mode === 'study' && (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-center" style={{ minWidth: '320px' }}>
+                <thead>
+                  <tr>
+                    <th className="py-2 px-1 text-xs font-semibold w-10" style={{ color: 'var(--text-muted)' }} />
+                    {COL_LABELS.map(col => (
+                      <th key={col} className="py-2 px-1 text-xs font-bold uppercase" style={{ color: 'var(--text-muted)' }}>
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ROWS.map(row => (
+                    <tr key={row.id} className="border-t" style={{ borderColor: 'var(--border-color)' }}>
+                      <td className="py-1 px-1 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>
+                        {row.label}
+                      </td>
+                      {row.hiragana.map((hChar, ci) => {
+                        const kChar = row.katakana[ci]
+                        if (!hChar && !kChar) return (
+                          <td key={ci} className="py-1 px-0.5">
+                            <span style={{ color: 'var(--border-subtle)' }}>—</span>
+                          </td>
+                        )
+                        return (
+                          <td key={ci} className="py-1 px-0.5">
+                            <div
+                              className="rounded-lg py-1.5 px-1 inline-flex flex-col items-center min-w-[44px]"
+                              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+                            >
+                              {showH && hChar && (
+                                <span className="text-lg md:text-xl leading-tight japanese-text font-medium" style={{ color: 'var(--text-primary)' }}>
+                                  {hChar.kana}
+                                </span>
+                              )}
+                              {showK && kChar && (
+                                <span className="text-lg md:text-xl leading-tight japanese-text font-medium" style={{ color: script === 'both' ? '#4A6FA5' : 'var(--text-primary)' }}>
+                                  {kChar.kana}
+                                </span>
+                              )}
+                              <span className="text-[10px] font-semibold mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                                {(hChar || kChar)?.romaji}
+                              </span>
+                            </div>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {script === 'both' && (
+                <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-muted)' }}>
+                  Black = Hiragana · <span style={{ color: '#4A6FA5' }}>Blue = Katakana</span>
+                </p>
+              )}
             </div>
           )}
 
-          {/* Content */}
-          {mode === 'study' ? <StudyView /> : <QuizView />}
+          {/* ── QUIZ MODE ──────────────────────────────────────────────── */}
+          {mode === 'quiz' && (
+            <div>
+              {/* Row selector */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                    Rows to quiz
+                  </span>
+                  <div className="flex gap-2">
+                    <button onClick={() => setSelectedRows(new Set(ALL_ROW_IDS))} className="text-xs px-2 py-0.5 rounded" style={{ color: '#4A6FA5' }}>All</button>
+                    <button onClick={() => setSelectedRows(new Set(['vowels']))} className="text-xs px-2 py-0.5 rounded" style={{ color: 'var(--text-muted)' }}>Vowels only</button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {ROWS.map(row => (
+                    <button
+                      key={row.id}
+                      onClick={() => toggleRow(row.id)}
+                      className="px-3 py-1 rounded-full text-xs font-semibold transition-all active:scale-95"
+                      style={{
+                        background: selectedRows.has(row.id) ? '#4A6FA5' : 'var(--bg-card)',
+                        color: selectedRows.has(row.id) ? '#ffffff' : 'var(--text-secondary)',
+                        border: `1px solid ${selectedRows.has(row.id) ? '#4A6FA5' : 'var(--border-subtle)'}`
+                      }}
+                    >
+                      {row.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {pool.length === 0 ? (
+                <div className="flex items-center justify-center py-20 text-center" style={{ color: 'var(--text-muted)' }}>
+                  Select at least one row to start quizzing.
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-5 max-w-sm mx-auto w-full">
+
+                  {/* Score */}
+                  <div className="flex items-center gap-4 text-sm">
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      {score.correct} / {score.total} correct
+                    </span>
+                    {accuracy !== null && (
+                      <span className="font-bold" style={{ color: accuracy >= 80 ? '#6A994E' : accuracy >= 50 ? '#E8A838' : '#BC4749' }}>
+                        {accuracy}%
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Kana card */}
+                  <div
+                    className="w-full rounded-2xl flex items-center justify-center"
+                    style={{
+                      background: 'var(--bg-card)',
+                      border: `2px solid ${feedback === 'correct' ? '#6A994E' : feedback === 'wrong' ? '#BC4749' : 'var(--border-subtle)'}`,
+                      height: '180px',
+                      transition: 'border-color 0.15s'
+                    }}
+                  >
+                    <span
+                      className="japanese-text font-bold select-none"
+                      style={{ fontSize: '7rem', lineHeight: 1, color: 'var(--text-primary)' }}
+                    >
+                      {current?.kana}
+                    </span>
+                  </div>
+
+                  {/* Feedback */}
+                  <div className="h-7 flex items-center justify-center">
+                    {feedback === 'correct' && (
+                      <span className="font-semibold text-lg fade-in" style={{ color: '#6A994E' }}>✓ Correct!</span>
+                    )}
+                    {feedback === 'wrong' && (
+                      <span className="font-semibold text-base fade-in" style={{ color: '#BC4749' }}>
+                        ✗ Answer: <strong>{correctAnswer}</strong>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Input — always mounted, never remounted */}
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type romaji..."
+                    disabled={feedback === 'correct'}
+                    autoCapitalize="none"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="w-full text-center text-xl rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-[#4A6FA5]"
+                    style={{
+                      background: 'var(--bg-input)',
+                      borderColor: feedback === 'correct' ? '#6A994E' : feedback === 'wrong' ? '#BC4749' : 'var(--border-subtle)',
+                      color: 'var(--text-primary)'
+                    }}
+                  />
+
+                  {/* Action button */}
+                  {feedback === null && (
+                    <button
+                      onClick={submitAnswer}
+                      disabled={!input.trim()}
+                      className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95 disabled:opacity-40"
+                      style={{ background: '#4A6FA5' }}
+                    >
+                      Check <span className="text-xs opacity-60 ml-1">[Enter]</span>
+                    </button>
+                  )}
+                  {feedback === 'wrong' && (
+                    <button
+                      onClick={handleNextClick}
+                      className="w-full py-3 rounded-xl font-semibold text-white transition-all active:scale-95"
+                      style={{ background: '#4A6FA5' }}
+                    >
+                      Next → <span className="text-xs opacity-60 ml-1">[Enter]</span>
+                    </button>
+                  )}
+                  {feedback === 'correct' && (
+                    <div className="w-full py-3 rounded-xl text-center font-semibold" style={{ color: '#6A994E', background: '#6A994E15' }}>
+                      ✓ Moving on...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>

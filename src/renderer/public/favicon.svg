@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- White background -->
+  <rect width="32" height="32" rx="4" fill="white"/>
+  <!-- Japanese flag red circle — lower half -->
+  <circle cx="16" cy="21" r="10" fill="#BC0027"/>
+  <!-- Mortarboard board (flat diamond) -->
+  <polygon points="16,2 31,9 16,16 1,9" fill="#111827"/>
+  <!-- Cap body -->
+  <path d="M11 13 h10 v5 q0 3-5 3 q-5 0-5-3 z" fill="#111827"/>
+  <!-- Tassel cord -->
+  <line x1="29" y1="9" x2="29" y2="15" stroke="#E8A838" stroke-width="2" stroke-linecap="round"/>
+  <!-- Tassel end -->
+  <circle cx="29" cy="17" r="2" fill="#E8A838"/>
+</svg>
