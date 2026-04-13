@@ -2,50 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Theme variables ─────────────────────────────────────────────────────── */
+:root {
+  --bg-base:     #0f0f1a;
+  --bg-surface:  #12121f;
+  --bg-card:     #1a1a2e;
+  --bg-input:    #1e293b;
+  --border-color:  #1e293b;
+  --border-subtle: #334155;
+  --text-primary:   #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+  --text-faint:     #475569;
+}
+
+:root[data-theme="light"] {
+  --bg-base:     #f1f5f9;
+  --bg-surface:  #ffffff;
+  --bg-card:     #f8fafc;
+  --bg-input:    #e2e8f0;
+  --border-color:  #e2e8f0;
+  --border-subtle: #cbd5e1;
+  --text-primary:   #0f172a;
+  --text-secondary: #475569;
+  --text-muted:     #64748b;
+  --text-faint:     #94a3b8;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     margin: 0;
     padding: 0;
-    background-color: #0f0f1a;
-    color: #e2e8f0;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s, color 0.2s;
   }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: #1a1a2e;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #4A6FA5;
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #6A994E;
-  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-card); }
+  ::-webkit-scrollbar-thumb { background: #4A6FA5; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6A994E; }
 }
 
+/* ── Components ──────────────────────────────────────────────────────────── */
 @layer components {
   .btn-primary {
     @apply bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-150 active:scale-95;
   }
 
   .btn-secondary {
-    @apply bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-150 active:scale-95;
+    @apply font-semibold py-2 px-4 rounded-lg transition-all duration-150 active:scale-95;
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
   }
 
   .card-surface {
-    @apply bg-[#1a1a2e] rounded-xl border border-slate-800;
+    background-color: var(--bg-card);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
   }
 
   .japanese-text {
@@ -53,46 +73,53 @@
   }
 }
 
-/* Smooth fade-in animation */
+/* ── Light mode global overrides ─────────────────────────────────────────── */
+/* These override Tailwind hardcoded color classes without requiring a full refactor */
+
+[data-theme="light"] .text-white    { color: #0f172a !important; }
+[data-theme="light"] .text-slate-200 { color: #1e293b !important; }
+[data-theme="light"] .text-slate-300 { color: #334155 !important; }
+[data-theme="light"] .text-slate-400 { color: #475569 !important; }
+[data-theme="light"] .text-slate-500 { color: #64748b !important; }
+[data-theme="light"] .text-slate-600 { color: #64748b !important; }
+
+[data-theme="light"] .bg-\[\#0f0f1a\] { background-color: var(--bg-base) !important; }
+[data-theme="light"] .bg-\[\#12121f\] { background-color: var(--bg-surface) !important; }
+[data-theme="light"] .bg-\[\#1a1a2e\] { background-color: var(--bg-card) !important; }
+[data-theme="light"] .bg-slate-800   { background-color: var(--bg-input) !important; }
+[data-theme="light"] .bg-slate-700   { background-color: #cbd5e1 !important; }
+
+[data-theme="light"] .border-slate-800 { border-color: var(--border-color) !important; }
+[data-theme="light"] .border-slate-700 { border-color: var(--border-subtle) !important; }
+
+[data-theme="light"] .placeholder-slate-500::placeholder { color: #94a3b8; }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.fade-in { animation: fadeIn 0.2s ease-out; }
 
-.fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
-
-/* Card flip animation */
 @keyframes flipIn {
   from { transform: rotateY(90deg); opacity: 0; }
-  to { transform: rotateY(0); opacity: 1; }
+  to   { transform: rotateY(0);     opacity: 1; }
 }
+.flip-in { animation: flipIn 0.25s ease-out; }
 
-.flip-in {
-  animation: flipIn 0.25s ease-out;
-}
-
-/* Furigana (ruby) styling */
-ruby {
-  ruby-align: center;
-}
-
+/* Furigana */
+ruby { ruby-align: center; }
 rt {
   font-size: 0.7em;
   color: #94a3b8;
   font-family: 'Hiragino Kana', 'Meiryo', 'Yu Gothic', sans-serif;
 }
 
-/* Pulse for due badge */
 @keyframes pulse-soft {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  50%       { opacity: 0.7; }
 }
-
-.pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
-}
+.pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
 
 /* iPhone safe area for bottom nav */
 .safe-area-bottom {

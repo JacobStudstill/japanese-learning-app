@@ -135,9 +135,9 @@ export default function Progress() {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto fade-in">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-white mb-1">Progress</h2>
+    <div className="p-4 md:p-8 max-w-4xl mx-auto fade-in">
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">Progress</h2>
         <p className="text-slate-400">Your Japanese learning journey</p>
       </div>
 
@@ -169,7 +169,7 @@ export default function Progress() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
         <div className="card-surface p-4 text-center">
           <div className="text-3xl font-bold text-[#E8A838] mb-1">{profile?.streak || 0}</div>
           <div className="text-slate-400 text-xs">Day Streak 🔥</div>
@@ -229,11 +229,11 @@ export default function Progress() {
 
       {/* Vocabulary list */}
       <div className="card-surface p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <h3 className="text-white font-semibold">
             {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)} Vocabulary ({filteredVocab.length})
           </h3>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {(['all', 'mastered', 'learning', 'new'] as const).map(f => (
               <button
                 key={f}
