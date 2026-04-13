@@ -229,15 +229,15 @@ export default function Conversation() {
     <div className="flex flex-col h-full">
       {/* Coming Soon overlay */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center fade-in">
+        <div className="inline-block px-5 py-2 rounded-full text-base font-bold bg-[#4A6FA5]/20 text-[#4A6FA5] border-2 border-[#4A6FA5]/50 mb-6 tracking-wide">
+          🚧 Coming Soon
+        </div>
         <div className="text-6xl mb-4">💬</div>
-        <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+        <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
           AI Conversation
         </h2>
-        <div className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#4A6FA5]/20 text-[#4A6FA5] border border-[#4A6FA5]/30 mb-4">
-          Coming Soon
-        </div>
         <p className="max-w-xs leading-relaxed mb-6" style={{ color: 'var(--text-secondary)' }}>
-          Chat with <strong>Keita</strong>, your AI Japanese tutor. Practice real conversations, work through scenarios, and build speaking confidence — all at N5 level.
+          Chat with <strong>Keita</strong>, your AI Japanese friend. Practice real conversations, work through scenarios, and build speaking confidence — all at N5 level.
         </p>
         <div className="space-y-2 text-sm w-full max-w-xs text-left">
           {[
