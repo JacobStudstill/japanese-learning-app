@@ -80,8 +80,8 @@ export default function ProfileDropdown({
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
+      {/* Backdrop — no click-to-close so unsaved changes aren't lost by accident */}
+      <div className="fixed inset-0 z-40 bg-black/50" />
 
       {/* Sheet — bottom on mobile, top-right dropdown on desktop */}
       <div
@@ -89,9 +89,17 @@ export default function ProfileDropdown({
                    md:inset-auto md:top-14 md:right-4 md:w-80 md:rounded-2xl md:max-h-[85vh]"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-color)' }}
       >
-        {/* Mobile drag handle */}
-        <div className="md:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-slate-600" />
+        {/* Mobile drag handle + close button row */}
+        <div className="flex items-center justify-between pt-3 pb-1 px-4">
+          <div className="md:hidden w-10 h-1 rounded-full bg-slate-600 mx-auto" />
+          <button
+            onClick={onClose}
+            className="ml-auto flex items-center justify-center w-8 h-8 rounded-full text-lg transition-colors hover:opacity-70"
+            style={{ background: 'var(--bg-card)', color: 'var(--text-muted)' }}
+            aria-label="Close"
+          >
+            ✕
+          </button>
         </div>
 
         <div className="p-4 pb-8 md:pb-4">

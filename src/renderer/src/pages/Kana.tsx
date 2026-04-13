@@ -137,14 +137,13 @@ export default function Kana() {
     setScore({ correct: 0, total: 0 })
   }, [script, selectedRows, mode])
 
-  // Focus input whenever quiz is active and waiting for answer
+  // Focus input when quiz first loads
   useEffect(() => {
-    if (mode === 'quiz' && feedback === null) {
-      // Small delay so DOM has settled
+    if (mode === 'quiz') {
       const t = setTimeout(() => inputRef.current?.focus(), 50)
       return () => clearTimeout(t)
     }
-  }, [mode, feedback, current])
+  }, [mode])
 
   function advanceToNext() {
     const p = poolRef.current
@@ -157,6 +156,8 @@ export default function Kana() {
     setFeedback(null)
     feedbackRef.current = null
     setCorrectAnswer('')
+    // Keep keyboard up on mobile — refocus without delay
+    inputRef.current?.focus()
   }
 
   function submitAnswer() {
@@ -168,7 +169,11 @@ export default function Kana() {
     setScore(s => ({ correct: s.correct + (ok ? 1 : 0), total: s.total + 1 }))
     setFeedback(ok ? 'correct' : 'wrong')
     feedbackRef.current = ok ? 'correct' : 'wrong'
-    if (!ok) setCorrectAnswer(cur.romaji)
+    if (!ok) {
+      setCorrectAnswer(cur.romaji)
+      // Stay focused so user can hit Enter to advance
+      inputRef.current?.focus()
+    }
     if (ok) {
       advanceTimer.current = setTimeout(advanceToNext, 650)
     }
@@ -409,11 +414,11 @@ export default function Kana() {
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Type romaji..."
-                    disabled={feedback === 'correct'}
                     autoCapitalize="none"
                     autoComplete="off"
                     autoCorrect="off"
                     spellCheck={false}
+                    inputMode="text"
                     className="w-full text-center text-xl rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-[#4A6FA5]"
                     style={{
                       background: 'var(--bg-input)',
