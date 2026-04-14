@@ -219,10 +219,17 @@ export async function markLessonComplete(unitId: number, lessonId: number) {
 
 // ── AI & Speech ───────────────────────────────────────────────────────────────
 
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession()
+  const base: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (session?.access_token) base['Authorization'] = `Bearer ${session.access_token}`
+  return base
+}
+
 export async function sendMessage(messages: Array<{ role: string; content: string }>) {
   const res = await fetch('/api/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ messages })
   })
   return res.json()
@@ -231,7 +238,7 @@ export async function sendMessage(messages: Array<{ role: string; content: strin
 export async function speak(text: string, slowMode = true) {
   const res = await fetch('/api/tts', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ text, slowMode })
   })
   return res.json()
@@ -240,7 +247,7 @@ export async function speak(text: string, slowMode = true) {
 export async function transcribeAudio(data: { audioBase64: string; mimeType: string }) {
   const res = await fetch('/api/stt', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ audioBase64: data.audioBase64 })
   })
   return res.json()

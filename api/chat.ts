@@ -1,5 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Anthropic from '@anthropic-ai/sdk'
+import { createClient } from '@supabase/supabase-js'
+
+async function verifyToken(token: string): Promise<boolean> {
+  const supabase = createClient(
+    process.env.VITE_SUPABASE_URL!,
+    process.env.VITE_SUPABASE_ANON_KEY!
+  )
+  const { data: { user } } = await supabase.auth.getUser(token)
+  return !!user
+}
 
 const SYSTEM_PROMPT = `You are Keita, a Japanese friend helping the user practice natural conversation. They are a beginner (JLPT N5 level).
 
@@ -23,6 +33,10 @@ Always:
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const authHeader = req.headers.authorization
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+  if (!token || !(await verifyToken(token))) return res.status(401).json({ error: 'Unauthorized' })
 
   const { messages } = req.body as { messages: Array<{ role: string; content: string }> }
   const apiKey = process.env.ANTHROPIC_API_KEY
