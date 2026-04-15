@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { updateProfile } from '../lib/api'
 import { useTheme } from '../context/ThemeContext'
@@ -33,6 +33,48 @@ export default function ProfileDropdown({
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordMsg, setPasswordMsg] = useState<{ text: string; ok: boolean } | null>(null)
   const [savingPassword, setSavingPassword] = useState(false)
+
+  const [mics, setMics] = useState<MediaDeviceInfo[]>([])
+  const [speakers, setSpeakers] = useState<MediaDeviceInfo[]>([])
+  const [selectedMic, setSelectedMic] = useState(() => localStorage.getItem('pref_mic_id') || '')
+  const [selectedSpeaker, setSelectedSpeaker] = useState(() => localStorage.getItem('pref_speaker_id') || '')
+  const [devicePermission, setDevicePermission] = useState<'unknown' | 'granted' | 'denied'>('unknown')
+
+  useEffect(() => {
+    enumerateDevices()
+  }, [])
+
+  async function enumerateDevices() {
+    if (!navigator.mediaDevices?.enumerateDevices) return
+    const devices = await navigator.mediaDevices.enumerateDevices()
+    const hasLabels = devices.some(d => d.label)
+    if (hasLabels) {
+      setDevicePermission('granted')
+      setMics(devices.filter(d => d.kind === 'audioinput'))
+      setSpeakers(devices.filter(d => d.kind === 'audiooutput'))
+    }
+  }
+
+  async function requestMicPermission() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach(t => t.stop())
+      setDevicePermission('granted')
+      await enumerateDevices()
+    } catch {
+      setDevicePermission('denied')
+    }
+  }
+
+  function handleMicChange(id: string) {
+    setSelectedMic(id)
+    localStorage.setItem('pref_mic_id', id)
+  }
+
+  function handleSpeakerChange(id: string) {
+    setSelectedSpeaker(id)
+    localStorage.setItem('pref_speaker_id', id)
+  }
 
   const hasChanges =
     nameInput.trim() !== (displayName || '') ||
@@ -199,6 +241,70 @@ export default function ProfileDropdown({
                 style={{ left: theme === 'light' ? '28px' : '4px' }}
               />
             </button>
+          </div>
+
+          {/* Audio devices */}
+          <div className="h-px mb-4" style={{ background: 'var(--border-color)' }} />
+          <div className="mb-4">
+            <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>
+              Audio Devices
+            </div>
+            {devicePermission !== 'granted' ? (
+              <div>
+                <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+                  Grant microphone access to choose your devices.
+                </p>
+                {devicePermission === 'denied' ? (
+                  <p className="text-xs" style={{ color: '#BC4749' }}>Microphone access was denied. Enable it in your browser settings.</p>
+                ) : (
+                  <button
+                    onClick={requestMicPermission}
+                    className="w-full py-2 rounded-lg text-sm font-semibold transition-all active:scale-95"
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)' }}
+                  >
+                    Enable Microphone Access
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {mics.length > 0 && (
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Microphone</label>
+                    <select
+                      value={selectedMic}
+                      onChange={e => handleMicChange(e.target.value)}
+                      className="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                      style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+                    >
+                      <option value="">Default</option>
+                      {mics.map(d => (
+                        <option key={d.deviceId} value={d.deviceId}>{d.label || d.deviceId}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {speakers.length > 0 && (
+                  <div>
+                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Speaker</label>
+                    <select
+                      value={selectedSpeaker}
+                      onChange={e => handleSpeakerChange(e.target.value)}
+                      className="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-1 focus:ring-[#4A6FA5]"
+                      style={{ background: 'var(--bg-input)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+                    >
+                      <option value="">Default</option>
+                      {speakers.map(d => (
+                        <option key={d.deviceId} value={d.deviceId}>{d.label || d.deviceId}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {mics.length === 0 && speakers.length === 0 && (
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>No audio devices found.</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Change password (non-anonymous only) */}

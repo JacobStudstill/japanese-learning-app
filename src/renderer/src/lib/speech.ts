@@ -52,6 +52,12 @@ export function speakJapanese(
       const audioBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0))
       if (myId !== requestCounter) return
 
+      // Apply saved speaker device if supported
+      const savedSpeaker = localStorage.getItem('pref_speaker_id')
+      if (savedSpeaker && 'setSinkId' in ctx) {
+        try { await (ctx as AudioContext & { setSinkId(id: string): Promise<void> }).setSinkId(savedSpeaker) } catch { /* unsupported or invalid */ }
+      }
+
       const source = ctx.createBufferSource()
       source.buffer = audioBuffer
       source.connect(ctx.destination)
@@ -124,7 +130,10 @@ export function startListening(
   let stream: MediaStream | null = null
   const pcmChunks: Float32Array[] = []
 
-  navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true } })
+  const savedMic = localStorage.getItem('pref_mic_id')
+  const audioConstraints: MediaTrackConstraints = { channelCount: 1, echoCancellation: true }
+  if (savedMic) audioConstraints.deviceId = { ideal: savedMic }
+  navigator.mediaDevices.getUserMedia({ audio: audioConstraints })
     .then((s) => {
       stream = s
       audioCtxLocal = new AudioContext({ sampleRate: STT_SAMPLE_RATE })
