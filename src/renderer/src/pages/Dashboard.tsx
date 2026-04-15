@@ -148,7 +148,7 @@ export default function Dashboard({ onNavigate, onRefreshDue }: Props) {
       </div>
 
       {/* Action cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-5 md:mb-8">
+      <div className="mb-5 md:mb-8">
         {/* Review */}
         <div className="card-surface p-4 md:p-6 border-[#4A6FA5] border">
           <div className="flex items-start justify-between mb-3 md:mb-4">
@@ -178,27 +178,6 @@ export default function Dashboard({ onNavigate, onRefreshDue }: Props) {
           </button>
         </div>
 
-        {/* Conversation */}
-        <div className="card-surface p-4 md:p-6 border-[#6A994E] border">
-          <div className="flex items-start justify-between mb-3 md:mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-1">AI Conversation</h3>
-              <p className="text-slate-400 text-sm">Practice with Keita</p>
-            </div>
-            <span className="text-3xl">💬</span>
-          </div>
-          <div className="mb-4 md:mb-5">
-            <p className="text-slate-300 text-sm leading-relaxed">
-              Chat with your AI tutor in Japanese. Build speaking confidence at N5 level.
-            </p>
-          </div>
-          <button
-            onClick={() => onNavigate('conversation')}
-            className="w-full py-3 px-4 rounded-lg font-semibold bg-[#6A994E] hover:bg-green-500 text-white transition-all duration-150 active:scale-95"
-          >
-            Start Conversation
-          </button>
-        </div>
       </div>
 
       {/* Lessons link */}
